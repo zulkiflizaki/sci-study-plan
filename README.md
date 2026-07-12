@@ -1,1 +1,1 @@
-# sci-study-plan
+# School of Computing and Informatics Study Plan
