@@ -13231,30 +13231,27 @@
           row.classList.toggle("search-hidden", !keepTerm && !match);
         });
       });
-
-      async function getGithubPushDate() {
-        const username = "zulkiflizaki";
-        const repo = "sci-study-plans";
+      async function fetchGitHubPushDate() {
+        // Replace these placeholders with your actual GitHub username and repository name
+        const owner = "zulkiflizaki";
+        const repo = "sci-study-plan";
         const element = document.getElementById("push-date");
 
         try {
-          // Fetch repository metadata from the public GitHub API
           const response = await fetch(
-            `https://api.github.com/repos/${username}/${repo}`,
+            `https://api.github.com/repos/${owner}/${repo}`,
           );
 
-          if (!response.ok) throw new Error("Network response was not ok");
+          if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.status}`);
+          }
 
-          const repos = await response.json();
+          const data = await response.json();
 
-          // Find the matching repository from your user profile
-          const currentRepo = repos.find(
-            (r) => r.name.toLowerCase() === repo.toLowerCase(),
-          );
+          if (data.pushed_at) {
+            const pushDate = new Date(data.pushed_at);
 
-          if (currentRepo && currentRepo.pushed_at) {
-            // Parse the ISO timestamp into a localized, human-readable date
-            const pushDate = new Date(currentRepo.pushed_at);
+            // Formats to a clean human-readable string (e.g., "July 12, 2026")
             const formattedDate = pushDate.toLocaleDateString(undefined, {
               year: "numeric",
               month: "long",
@@ -13263,15 +13260,16 @@
 
             element.textContent = formattedDate;
           } else {
-            element.textContent = "Repository not found";
+            element.textContent = "Unknown Date";
           }
         } catch (error) {
-          console.error("Error fetching GitHub data:", error);
+          console.error("Failed to fetch GitHub push date:", error);
           element.textContent = "Unavailable";
         }
       }
-      // Execute the function when the webpage loads
-      document.addEventListener("DOMContentLoaded", getGithubPushDate);
+
+      // Execute the fetch once the HTML structure is loaded
+      document.addEventListener("DOMContentLoaded", fetchGitHubPushDate);
     </script>
   </body>
 </html>
