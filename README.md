@@ -1,5 +1,4 @@
-# School of Computing and Informatics Study Plan
-
+# School of Computing and Informatics
 # Academic Study Plan & Curriculum Tracker
 
 An interactive, front-end dashboard designed to map out academic course pathways, monitor credit hour distributions, and visualize graduation scenarios. Built entirely with semantic HTML, CSS utility classes, and vanilla JavaScript.
