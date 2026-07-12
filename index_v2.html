@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>School of Computing & Informatics - Academic Simulation Dashboard</title>
+    <style>
+      :root {
+        --ink: #000000;
+        --muted: #667085;
+        --industrial-light: #dbdbdd;
+        --industrial-silver: #c6c4c7;
+        --industrial-charcoal: #484c4f;
+        --industrial-slate: #50616b;
+        --industrial-teal: #238aa1;
+        --surface: #ffffff;
+        --page: #f5f8fa;
+        --accent-glow: #fffeda;
+        --error-bg: #f4cccc;
+        --success-bg: #d9ead3;
+        --cohort-yellow: #fff2cc;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      
+      body {
+        overflow: hidden;
+        background: var(--page);
+        color: var(--ink);
+        font: 9pt/1.4 "Century Gothic", "Liberation Mono", "Ubuntu Mono", "Cascadia Mono", Consolas, monospace;
+        font-variant-ligatures: none;
+      }
+      
+      .app {
+        height: 100vh;
+        display: grid;
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+      }
+      
+      .topbar {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        font-size: 10pt;
+        justify-content: space-between;
+        gap: 24px;
+        min-height: 68px;
+        padding: 12px 22px;
+        color: #000000;
+        background: linear-gradient(115deg, var(--industrial-light), #d4e8ec);
+        border-bottom: 1px solid rgba(24, 59, 86, 0.15);
+        box-shadow: 0 3px 18px rgba(31, 55, 78, 0.08);
+      }
+      
+      .topbar h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+      }
+      
+      .topbar p {
+        margin: 4px 0 0;
+        color: #000000;
+        font-size: 11px;
+      }
+      
+      .badge {
+        flex: none;
+        padding: 6px 10px;
+        border: 1px solid #64748b;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      
+      .document-meta {
+        display: grid;
+        justify-items: end;
+        gap: 5px;
+      }
+      
+      .template-credit {
+        margin: 0;
+        font-size: 8pt;
+        color: #000000;
+        opacity: 0.72;
+      }
+      
+      .fixed-header {
+        position: sticky;
+        z-index: 5;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 8px 12px 0;
+        background: var(--page);
+        border-bottom: 10px solid #ffffff;
+        box-shadow: 0 5px 16px rgba(30, 49, 76, 0.08);
+        scrollbar-width: none;
+      }
+      
+      .fixed-header::-webkit-scrollbar {
+        display: none;
+      }
+      
+      .scroll-body {
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        padding: 0 12px 12px;
+        background: var(--page);
+      }
+      
+      table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0 0;
+        background: rgba(255, 255, 255, 0.94);
+        border-radius: 0 0 12px 12px;
+      }
+      
+      td {
+        color: #000000 !important;
+        overflow: hidden;
+        padding: 6px 8px;
+        border: 0;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+        hyphens: auto;
+        font-size: 10pt;
+        vertical-align: middle;
+      }
+      
+      td.scenario-1 {
+        background-color: var(--industrial-light) !important;
+      }
+      
+      td.scenario-1.padding {
+        background-color: #ffffff !important;
+      }
+      
+      td.scenario-2 {
+        background-color: #d4e8ec !important;
+      }
+      
+      td.scenario-2.padding {
+        background-color: #ffffff !important;
+      }
+      
+      td.scenario-title {
+        padding: 10px 12px;
+        font-size: 11pt;
+        font-weight: 700 !important;
+        letter-spacing: -0.015em;
+      }
+      
+      td.intake-cohort {
+        padding: 7px 6px;
+        text-align: center;
+        line-height: 1.4;
+      }
+      
+      td.scenario-title.scenario-1 {
+        background: var(--industrial-silver) !important;
+      }
+      
+      td.scenario-title.scenario-2 {
+        background: #8fc6d2 !important;
+      }
+      
+      td.total-credit {
+        padding: 6px 8px;
+        background: var(--industrial-charcoal) !important;
+        color: #ffffff !important;
+        text-align: center !important;
+        white-space: nowrap;
+        font-weight: 700 !important;
+        border-right: 4px solid var(--page);
+      }
+      
+      td.credit-cell {
+        padding-left: 2px;
+        padding-right: 4px;
+        text-align: center !important;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        border-right: 1px solid rgba(24, 59, 86, 0.16);
+      }
+      
+      .credit-editable {
+        display: inline-block;
+        min-width: 20px;
+        padding: 2px 4px;
+        border-bottom: 1px dashed var(--industrial-teal);
+        cursor: pointer;
+        outline: none;
+      }
+      
+      .credit-editable:focus {
+        background: #ffffff;
+        border: 1px solid var(--industrial-teal);
+        border-radius: 4px;
+        box-shadow: 0 0 4px rgba(35, 138, 161, 0.4);
+      }
+      
+      td.course-cell {
+        padding-right: 7px;
+      }
+      
+      .scroll-body tbody tr:hover td {
+        background-color: var(--accent-glow) !important;
+        transition: background-color 0.15s ease;
+      }
+      
+      td.term-start {
+        color: #000000 !important;
+        font-weight: 800 !important;
+      }
+      
+      td.term-october {
+        background: var(--industrial-silver) !important;
+        font-size: 10pt !important;
+      }
+      
+      td.term-october.term-name {
+        font-size: 14pt !important;
+      }
+      
+      td.term-march {
+        background: #aeb8bd !important;
+        font-size: 10pt !important;
+      }
+      
+      td.term-march.term-name {
+        font-size: 14pt !important;
+      }
+      
+      .controls {
+        z-index: 8;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 18px;
+        background: rgba(255, 255, 255, 0.92);
+        border-bottom: 1px solid rgba(24, 59, 86, 0.15);
+      }
+      
+      .controls input,
+      .controls select,
+      .controls button {
+        min-height: 34px;
+        padding: 6px 12px;
+        border: 1px solid #d4dee8;
+        border-radius: 8px;
+        background: white;
+        color: #000000;
+        font: inherit;
+      }
+      
+      .controls select {
+        cursor: pointer;
+        font-weight: 600;
+        background-color: #f8fafc;
+      }
+      
+      .controls select:focus {
+        border-color: var(--industrial-teal);
+        outline: none;
+      }
+      
+      .controls input {
+        width: 200px;
+      }
+      
+      .controls button {
+        cursor: pointer;
+        font-weight: 700;
+      }
+      
+      .controls button:hover {
+        border-color: var(--industrial-teal);
+      }
+      
+      .controls button.active {
+        color: #000000;
+        background: #8fc6d2;
+        border-color: var(--industrial-slate);
+      }
+      
+      .legend {
+        margin-left: auto;
+        white-space: nowrap;
+        color: #000000;
+        font-size: 10pt;
+      }
+      
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 0 4px 0 10px;
+        border-radius: 50%;
+      }
+      
+      .dot.s1 { background: var(--industrial-charcoal); }
+      .dot.s2 { background: var(--industrial-teal); }
+      
+      body.show-s1 .scenario-2,
+      body.show-s2 .scenario-1 {
+        display: none;
+      }
+      
+      body.compact td {
+        padding: 3px 5px;
+        font-size: 8pt;
+      }
+      
+      body.compact tr {
+        height: auto !important;
+      }
+      
+      tr.search-hidden {
+        display: none;
+      }
+      
+      mark {
+        padding: 0 2px;
+        background: #8fc6d2;
+        color: #000000;
+      }
+      
+      .header-cell {
+        font-size: 10pt;
+      }
+      
+      .period-cell {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        min-width: 90px;
+        background: #f5f8fa !important;
+        color: #000000 !important;
+        text-align: center !important;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        white-space: nowrap;
+        letter-spacing: 0.03em;
+      }
+      
+      td.period-cell.term-october { background: var(--industrial-silver) !important; }
+      td.period-cell.term-march { background: var(--industrial-slate) !important; }
+      
+      .term-start {
+        border-top: 2px solid #94a8bd;
+      }
+      
+      .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #ff3b30;
+        color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 12px;
+      }
+      
+      .live-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        animation: pulse 1s infinite alternate;
+      }
+      
+      @keyframes pulse {
+        0% { opacity: 0.3; }
+        100% { opacity: 1; }
+      }
+
+      /* Multi-programme Semantic Color Framework */
+      .cell-title-gray { background: #d9d9d9 !important; text-align: center !important; font-weight: 700 !important; }
+      .cell-cohort-yellow { background: var(--cohort-yellow) !important; text-align: center !important; font-weight: 700 !important; }
+      .cell-cohort-green { background: var(--success-bg) !important; text-align: center !important; font-weight: 700 !important; }
+      .cell-credit-black { background: var(--industrial-charcoal) !important; color: #ffffff !important; text-align: center !important; font-weight: 700 !important; }
+      
+      .cell-normal { background: transparent; }
+      .cell-removed { background: var(--error-bg) !important; color: #ff0000 !important; text-decoration: line-through; }
+      .cell-added { background: var(--success-bg) !important; font-weight: bold; }
+      
+      .col-w-90 { width: 90px; min-width: 90px; }
+      .col-w-150 { width: 150px; min-width: 150px; }
+      .col-w-45 { width: 45px; min-width: 45px; }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1 id="mainTitle">School of Computing & Informatics Simulation</h1>
+          <p id="subTitle">Academic Cycle 2026–2027 Simulation Engine</p>
+        </div>
+        <div class="document-meta">
+          <div class="badge live-indicator">
+            <span class="live-dot"></span> Dynamic Engine v2.1
+          </div>
+          <p class="template-credit">Real-time Credit Matrix Audit Protocol</p>
+        </div>
+      </header>
+
+      <nav class="controls" aria-label="Dashboard controls">
+        <select id="programmeSelector" aria-label="Select Academic Programme">
+          <option value="BDS">Bachelor in Data Science (BDS)</option>
+          <option value="BCS">Bachelor of Computer Science (BCS)</option>
+          <option value="BIT">Bachelor of Information Technology (Cybersecurity)</option>
+        </select>
+        
+        <input id="search" type="search" placeholder="Filter subjects…" aria-label="Search courses" />
+        
+        <button class="scenario-button active" data-view="all">Both scenarios</button>
+        <button class="scenario-button" data-view="show-s1">Full migration</button>
+        <button class="scenario-button" data-view="show-s2">Partial migration</button>
+        
+        <button id="compactButton" aria-pressed="false">Compact view</button>
+        
+        <span class="legend">
+          <i class="dot s1"></i>Full Migration <i class="dot s2"></i>Partial Migration
+        </span>
+      </nav>
+
+      <section class="fixed-header" id="fixedHeader">
+        <table>
+          <colgroup>
+            <col class="col-w-90" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+          </colgroup>
+          <thead>
+            <tr>
+              <td class="header-cell period-cell cell-title-gray">Matrix Map</td>
+              <td class="header-cell scenario-title scenario-1 cell-title-gray" colspan="10">Scenario 1: Full Migration (LL)</td>
+              <td class="header-cell scenario-title scenario-2 cell-title-gray" colspan="10">Scenario 2A: Partial Migration (LLS + LL)</td>
+            </tr>
+            <tr>
+              <td class="header-cell period-cell cell-title-gray">Cohort ID</td>
+              <td class="header-cell intake-cohort scenario-1 cell-title-gray" colspan="2">Intake 24/25<br />Cohort 1A</td>
+              <td class="header-cell intake-cohort scenario-1 cell-title-gray" colspan="2">Intake 24/25<br />Cohort 1B</td>
+              <td class="header-cell intake-cohort scenario-1 cell-title-gray" colspan="2">Intake 25/26<br />Cohort 2A</td>
+              <td class="header-cell intake-cohort scenario-1 cell-title-gray" colspan="2">Intake 25/26<br />Cohort 2B</td>
+              <td class="header-cell intake-cohort scenario-1 cell-title-gray" colspan="2">Intake 26/27<br />Cohort 3A</td>
+              <td class="header-cell intake-cohort scenario-2 cell-cohort-yellow" colspan="2">Intake 24/25<br />Cohort 1A (LLS)</td>
+              <td class="header-cell intake-cohort scenario-2 cell-cohort-yellow" colspan="2">Intake 24/25<br />Cohort 1B (LLS)</td>
+              <td class="header-cell intake-cohort scenario-2 cell-cohort-yellow" colspan="2">Intake 25/26<br />Cohort 2A (LLS)</td>
+              <td class="header-cell intake-cohort scenario-2 cell-cohort-yellow" colspan="2">Intake 25/26<br />Cohort 2B (LLS)</td>
+              <td class="header-cell intake-cohort scenario-2 cell-cohort-green" colspan="2">Intake 26/27<br />Cohort 3A (LL)</td>
+            </tr>
+            <tr id="creditSummaryHeader">
+              <td class="header-cell period-cell cell-title-gray">Aggregates</td>
+              <td class="total-credit scenario-1" colspan="2" data-col-idx="1">Total Credits: --</td>
+              <td class="total-credit scenario-1" colspan="2" data-col-idx="2">Total Credits: --</td>
+              <td class="total-credit scenario-1" colspan="2" data-col-idx="3">Total Credits: --</td>
+              <td class="total-credit scenario-1" colspan="2" data-col-idx="4">Total Credits: --</td>
+              <td class="total-credit scenario-1" colspan="2" data-col-idx="5">Total Credits: --</td>
+              <td class="total-credit scenario-2" colspan="2" data-col-idx="6">Total Credits: --</td>
+              <td class="total-credit scenario-2" colspan="2" data-col-idx="7">Total Credits: --</td>
+              <td class="total-credit scenario-2" colspan="2" data-col-idx="8">Total Credits: --</td>
+              <td class="total-credit scenario-2" colspan="2" data-col-idx="9">Total Credits: --</td>
+              <td class="total-credit scenario-2" colspan="2" data-col-idx="10">Total Credits: --</td>
+            </tr>
+          </thead>
+        </table>
+      </section>
+
+      <section class="scroll-body" id="scrollBody">
+        <table>
+          <colgroup>
+            <col class="col-w-90" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-1 col-w-150" /><col class="scenario-1 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+            <col class="scenario-2 col-w-150" /><col class="scenario-2 col-w-45" />
+          </colgroup>
+          <tbody id="dynamicTimelineContainer">
+            <!-- Program rows are generated programmatically here -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      // Multi-programme Core Curriculum Schemas
+      const programmeData = {
+        BDS: {
+          title: "Bachelor in Data Science (BDS)",
+          subtitle: "School of Computing and Informatics · Analytics & Statistical Modeling Stream",
+          terms: [
+            {
+              id: "term-1",
+              name: "October 2026",
+              styleClass: "term-october",
+              rows: [
+                {
+                  type: "header",
+                  labels: ["Year 3 Sem 1", "Year 2 Sem 3", "Year 2 Sem 1", "Year 1 Sem 3", "Year 1 Sem 1", "Year 3 Sem 1", "Year 2 Sem 3", "Year 2 Sem 1", "Year 1 Sem 3", "Year 1 Sem 1"]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Final Year Project 2", credit: 6, status: "removed" },
+                    { name: "Final Year Project 1", credit: 3, status: "normal" },
+                    { name: "Programming for Data Science", credit: 3, status: "normal" },
+                    { name: "Programming for Data Science", credit: 3, status: "normal" },
+                    { name: "Falsafah & Cabaran Semasa", credit: 2, status: "normal" },
+                    { name: "Final Year Project 2", credit: 6, status: "normal" },
+                    { name: "Philosophy & Current Issues", credit: 3, status: "normal" },
+                    { name: "Programming for Data Science", credit: 3, status: "normal" },
+                    { name: "Programming for Data Science", credit: 3, status: "normal" },
+                    { name: "Falsafah & Cabaran Semasa", credit: 2, status: "normal" }
+                  ]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Big Data Analytics", credit: 3, status: "normal" },
+                    { name: "Integrity & Anti-Corruption", credit: 3, status: "normal" },
+                    { name: "Data Structures & Algorithms", credit: 3, status: "normal" },
+                    { name: "Data Structures & Algorithms", credit: 3, status: "normal" },
+                    { name: "Foundations of Value Formation", credit: 2, status: "normal" },
+                    { name: "Big Data Analytics", credit: 3, status: "normal" },
+                    { name: "Integrity & Anti-Corruption", credit: 3, status: "normal" },
+                    { name: "Data Structures & Algorithms", credit: 3, status: "normal" },
+                    { name: "Data Structures & Algorithms", credit: 3, status: "normal" },
+                    { name: "Foundations of Value Formation", credit: 2, status: "normal" }
+                  ]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Field Elective 5: Computer Vision", credit: 3, status: "normal" },
+                    { name: "Philosophy & Current Issues", credit: 3, status: "normal" },
+                    { name: "Discrete Mathematics", credit: 3, status: "removed" },
+                    { name: "Operating Systems", credit: 3, status: "normal" },
+                    { name: "Sustainability & Society", credit: 2, status: "normal" },
+                    { name: "Field Elective 5: Computer Vision", credit: 3, status: "normal" },
+                    { name: "Final Year Project 1", credit: 3, status: "normal" },
+                    { name: "Operating Systems", credit: 3, status: "normal" },
+                    { name: "Operating Systems", credit: 3, status: "normal" },
+                    { name: "Sustainability & Society", credit: 2, status: "normal" }
+                  ]
+                }
+              ]
+            },
+            {
+              id: "term-2",
+              name: "March 2027",
+              styleClass: "term-march",
+              rows: [
+                {
+                  type: "header",
+                  labels: ["Year 3 Sem 2", "Year 3 Sem 1", "Year 2 Sem 2", "Year 2 Sem 1", "Year 1 Sem 2", "Year 3 Sem 2", "Year 3 Sem 1", "Year 2 Sem 2", "Year 2 Sem 1", "Year 1 Sem 2"]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Industrial Training", credit: 12, status: "normal" },
+                    { name: "Final Year Project 2", credit: 6, status: "added" },
+                    { name: "Final Year Project 1", credit: 3, status: "added" },
+                    { name: "Machine Learning", credit: 3, status: "normal" },
+                    { name: "Malaysian Citra", credit: 2, status: "normal" },
+                    { name: "Industrial Training", credit: 6, status: "normal" },
+                    { name: "Final Year Project 2", credit: 6, status: "normal" },
+                    { name: "Machine Learning", credit: 3, status: "normal" },
+                    { name: "Machine Learning", credit: 3, status: "normal" },
+                    { name: "Malaysian Citra", credit: 2, status: "normal" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        BCS: {
+          title: "Bachelor of Computer Science (BCS)",
+          subtitle: "School of Computing and Informatics · Software Systems & Architecture Engineering",
+          terms: [
+            {
+              id: "term-1",
+              name: "October 2026",
+              styleClass: "term-october",
+              rows: [
+                {
+                  type: "header",
+                  labels: ["Year 3 Sem 1", "Year 2 Sem 3", "Year 2 Sem 1", "Year 1 Sem 3", "Year 1 Sem 1", "Year 3 Sem 1", "Year 2 Sem 3", "Year 2 Sem 1", "Year 1 Sem 3", "Year 1 Sem 1"]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Advanced Software Engineering", credit: 3, status: "normal" },
+                    { name: "System Architecture & Design", credit: 3, status: "normal" },
+                    { name: "Object-Oriented Programming", credit: 3, status: "normal" },
+                    { name: "Introduction to Computing", credit: 3, status: "normal" },
+                    { name: "Discrete Structures", credit: 3, status: "normal" },
+                    { name: "Advanced Software Engineering", credit: 3, status: "normal" },
+                    { name: "System Architecture & Design", credit: 3, status: "normal" },
+                    { name: "Object-Oriented Programming", credit: 3, status: "normal" },
+                    { name: "Introduction to Computing", credit: 3, status: "normal" },
+                    { name: "Discrete Structures", credit: 3, status: "normal" }
+                  ]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Compiler Design", credit: 3, status: "normal" },
+                    { name: "Database Engineering", credit: 3, status: "normal" },
+                    { name: "Computer Networks", credit: 3, status: "normal" },
+                    { name: "Web Systems Infrastructure", credit: 3, status: "normal" },
+                    { name: "Falsafah & Cabaran Semasa", credit: 2, status: "normal" },
+                    { name: "Compiler Design", credit: 3, status: "normal" },
+                    { name: "Database Engineering", credit: 3, status: "normal" },
+                    { name: "Computer Networks", credit: 3, status: "normal" },
+                    { name: "Web Systems Infrastructure", credit: 3, status: "normal" },
+                    { name: "Falsafah & Cabaran Semasa", credit: 2, status: "normal" }
+                  ]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Distributed Development", credit: 4, status: "normal" },
+                    { name: "Integrity & Anti-Corruption", credit: 3, status: "normal" },
+                    { name: "Artificial Intelligence Foundations", credit: 3, status: "removed" },
+                    { name: "User Experience Architecture", credit: 3, status: "normal" },
+                    { name: "Foundations of Value Formation", credit: 2, status: "normal" },
+                    { name: "Distributed Development", credit: 4, status: "normal" },
+                    { name: "Integrity & Anti-Corruption", credit: 3, status: "normal" },
+                    { name: "Cloud Infrastructure Eng.", credit: 3, status: "added" },
+                    { name: "User Experience Architecture", credit: 3, status: "normal" },
+                    { name: "Foundations of Value Formation", credit: 2, status: "normal" }
+                  ]
+                }
+              ]
+            },
+            {
+              id: "term-2",
+              name: "March 2027",
+              styleClass: "term-march",
+              rows: [
+                {
+                  type: "header",
+                  labels: ["Year 3 Sem 2", "Year 3 Sem 1", "Year 2 Sem 2", "Year 2 Sem 1", "Year 1 Sem 2", "Year 3 Sem 2", "Year 3 Sem 1", "Year 2 Sem 2", "Year 2 Sem 1", "Year 1 Sem 2"]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "BCS Capstone Project 2", credit: 6, status: "normal" },
+                    { name: "BCS Capstone Project 1", credit: 3, status: "normal" },
+                    { name: "Enterprise Systems", credit: 3, status: "normal" },
+                    { name: "Theory of Computation", credit: 3, status: "normal" },
+                    { name: "Malaysian Citra", credit: 2, status: "normal" },
+                    { name: "BCS Capstone Project 2", credit: 6, status: "normal" },
+                    { name: "BCS Capstone Project 1", credit: 3, status: "normal" },
+                    { name: "Enterprise Systems", credit: 3, status: "normal" },
+                    { name: "Theory of Computation", credit: 3, status: "normal" },
+                    { name: "Malaysian Citra", credit: 2, status: "normal" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        BIT: {
+          title: "Bachelor of Information Technology (Cybersecurity)",
+          subtitle: "School of Computing and Informatics · Defensive Infrastructure & Cryptanalysis Operations",
+          terms: [
+            {
+              id: "term-1",
+              name: "October 2026",
+              styleClass: "term-october",
+              rows: [
+                {
+                  type: "header",
+                  labels: ["Year 3 Sem 1", "Year 2 Sem 3", "Year 2 Sem 1", "Year 1 Sem 3", "Year 1 Sem 1", "Year 3 Sem 1", "Year 2 Sem 3", "Year 2 Sem 1", "Year 1 Sem 3", "Year 1 Sem 1"]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Penetration Testing Operations", credit: 4, status: "normal" },
+                    { name: "Network Defense Architectures", credit: 3, status: "normal" },
+                    { name: "Information Security Principles", credit: 3, status: "normal" },
+                    { name: "Introduction to Networking", credit: 3, status: "normal" },
+                    { name: "Mathematical Foundations for IT", credit: 3, status: "normal" },
+                    { name: "Penetration Testing Operations", credit: 4, status: "normal" },
+                    { name: "Network Defense Architectures", credit: 3, status: "normal" },
+                    { name: "Information Security Principles", credit: 3, status: "normal" },
+                    { name: "Introduction to Networking", credit: 3, status: "normal" },
+                    { name: "Mathematical Foundations for IT", credit: 3, status: "normal" }
+                  ]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Ethical Hacking Paradigms", credit: 3, status: "normal" },
+                    { name: "Linux System Administration", credit: 3, status: "normal" },
+                    { name: "Applied Cryptography Fundamentals", credit: 3, status: "normal" },
+                    { name: "Scripting for Cybersecurity", credit: 3, status: "normal" },
+                    { name: "Falsafah & Cabaran Semasa", credit: 2, status: "normal" },
+                    { name: "Ethical Hacking Paradigms", credit: 3, status: "normal" },
+                    { name: "Linux System Administration", credit: 3, status: "normal" },
+                    { name: "Applied Cryptography Fundamentals", credit: 3, status: "normal" },
+                    { name: "Scripting for Cybersecurity", credit: 3, status: "normal" },
+                    { name: "Falsafah & Cabaran Semasa", credit: 2, status: "normal" }
+                  ]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Incident Response Engineering", credit: 3, status: "normal" },
+                    { name: "Integrity & Anti-Corruption", credit: 3, status: "normal" },
+                    { name: "Digital Forensics & Evidence", credit: 3, status: "removed" },
+                    { name: "Governance, Risk & Compliance", credit: 3, status: "normal" },
+                    { name: "Foundations of Value Formation", credit: 2, status: "normal" },
+                    { name: "Incident Response Engineering", credit: 3, status: "normal" },
+                    { name: "Integrity & Anti-Corruption", credit: 3, status: "normal" },
+                    { name: "Advanced Threat Hunting", credit: 3, status: "added" },
+                    { name: "Governance, Risk & Compliance", credit: 3, status: "normal" },
+                    { name: "Foundations of Value Formation", credit: 2, status: "normal" }
+                  ]
+                }
+              ]
+            },
+            {
+              id: "term-2",
+              name: "March 2027",
+              styleClass: "term-march",
+              rows: [
+                {
+                  type: "header",
+                  labels: ["Year 3 Sem 2", "Year 3 Sem 1", "Year 2 Sem 2", "Year 2 Sem 1", "Year 1 Sem 2", "Year 3 Sem 2", "Year 3 Sem 1", "Year 2 Sem 2", "Year 2 Sem 1", "Year 1 Sem 2"]
+                },
+                {
+                  type: "courses",
+                  data: [
+                    { name: "Cyber Operations Capstone 2", credit: 6, status: "normal" },
+                    { name: "Cyber Operations Capstone 1", credit: 3, status: "normal" },
+                    { name: "Cloud Infrastructure Defense", credit: 3, status: "normal" },
+                    { name: "Reverse Engineering Systems", credit: 3, status: "normal" },
+                    { name: "Malaysian Citra", credit: 2, status: "normal" },
+                    { name: "Cyber Operations Capstone 2", credit: 6, status: "normal" },
+                    { name: "Cyber Operations Capstone 1", credit: 3, status: "normal" },
+                    { name: "Cloud Infrastructure Defense", credit: 3, status: "normal" },
+                    { name: "Reverse Engineering Systems", credit: 3, status: "normal" },
+                    { name: "Malaysian Citra", credit: 2, status: "normal" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      // Recalibration Audit Loop Engine
+      function calculateTotalCredits() {
+        const columnsCount = 10;
+        const totalCalculated = Array(columnsCount).fill(0);
+
+        // Find all interactive nodes across rows
+        const rows = document.querySelectorAll("#dynamicTimelineContainer tr[data-search]");
+        
+        rows.forEach(row => {
+          const creditCells = row.querySelectorAll("td.credit-cell");
+          creditCells.forEach((cell, idx) => {
+            const editableSpan = cell.querySelector(".credit-editable");
+            if (editableSpan) {
+              const textValue = editableSpan.textContent.trim();
+              const numericValue = parseInt(textValue, 10) || 0;
+              
+              // Only parse if parent cell row doesn't state it's explicitly removed structurally
+              if (!editableSpan.parentElement.classList.contains('cell-removed')) {
+                totalCalculated[idx] += numericValue;
+              }
+            }
+          });
+        });
+
+        // Push calculated figures upstream to sticky aggregate component DOM
+        for (let i = 1; i <= columnsCount; i++) {
+          const summaryCell = document.querySelector(`#creditSummaryHeader td[data-col-idx="${i}"]`);
+          if (summaryCell) {
+            summaryCell.textContent = `Total Credits: ${totalCalculated[i - 1]}`;
+          }
+        }
+      }
+
+      // Dynamic Matrix Generation Engine
+      function renderProgramme(progKey) {
+        const data = programmeData[progKey];
+        if (!data) return;
+
+        // Update titles
+        document.getElementById("mainTitle").textContent = data.title;
+        document.getElementById("subTitle").textContent = data.subtitle;
+
+        const container = document.getElementById("dynamicTimelineContainer");
+        container.innerHTML = ""; // Flush pipeline
+
+        data.terms.forEach(term => {
+          term.rows.forEach((row, rowIndex) => {
+            const tr = document.createElement("tr");
+            
+            // Build absolute text searchable string parameter meta mapping
+            let rowSearchKeywords = `${term.name.toLowerCase()} `;
+            
+            if (row.type === "header") {
+              tr.className = "row-h-28";
+              rowSearchKeywords += row.labels.join(" ").toLowerCase();
+              tr.setAttribute("data-search", rowSearchKeywords);
+
+              // Sticky timeline anchor node
+              if (rowIndex === 0) {
+                const periodCell = document.createElement("td");
+                periodCell.className = `period-cell term-start ${term.styleClass} term-name`;
+                periodCell.rowspan = term.rows.length;
+                periodCell.setAttribute("rowspan", term.rows.length);
+                periodCell.textContent = term.name;
+                tr.appendChild(periodCell);
+              }
+
+              // Loop cohort labels across structural headers
+              row.labels.forEach((label, idx) => {
+                const cell = document.createElement("td");
+                const scenarioClass = idx < 5 ? "scenario-1" : "scenario-2";
+                cell.className = `${scenarioClass} course-cell term-start ${term.styleClass} cell-title-gray`;
+                cell.setAttribute("colspan", "2");
+                cell.textContent = label;
+                tr.appendChild(cell);
+              });
+
+            } else if (row.type === "courses") {
+              tr.className = "row-h-30";
+              row.data.forEach(c => { rowSearchKeywords += `${c.name.toLowerCase()} ${c.credit} `; });
+              tr.setAttribute("data-search", rowSearchKeywords);
+
+              // Check for empty space pad requirement
+              if (rowIndex === 0) {
+                const emptySpacer = document.createElement("td");
+                emptySpacer.className = "period-cell cell-title-gray";
+                tr.appendChild(emptySpacer);
+              }
+
+              row.data.forEach((course, idx) => {
+                const scenarioClass = idx < 5 ? "scenario-1" : "scenario-2";
+                
+                // Track style layout variants dynamically
+                let statusStyleClass = "cell-normal";
+                if (course.status === "removed") statusStyleClass = "cell-removed";
+                if (course.status === "added") statusStyleClass = "cell-added";
+
+                // Field Course Component
+                const courseCell = document.createElement("td");
+                courseCell.className = `${scenarioClass} course-cell ${statusStyleClass}`;
+                courseCell.textContent = course.name;
+                tr.appendChild(courseCell);
+
+                // Field Credit System Component
+                const creditCell = document.createElement("td");
+                creditCell.className = `${scenarioClass} credit-cell ${statusStyleClass}`;
+                
+                const editableSpan = document.createElement("span");
+                editableSpan.className = "credit-editable";
+                editableSpan.setAttribute("contenteditable", "true");
+                editableSpan.textContent = course.credit;
+                
+                // Intercept calculations on runtime mutation events
+                editableSpan.addEventListener("input", () => {
+                  calculateTotalCredits();
+                });
+
+                // Enforce formatting parameters on focus lost
+                editableSpan.addEventListener("blur", () => {
+                  if (isNaN(parseInt(editableSpan.textContent.trim(), 10))) {
+                    editableSpan.textContent = "0";
+                  }
+                  calculateTotalCredits();
+                });
+
+                creditCell.appendChild(editableSpan);
+                tr.appendChild(creditCell);
+              });
+            }
+
+            container.appendChild(tr);
+          });
+        });
+
+        // Re-execute aggregations dynamically across loaded matrix arrays
+        calculateTotalCredits();
+      }
+
+      // UI View Engine Initializations & Filtering Pipeline Event Handlers
+      document.addEventListener("DOMContentLoaded", () => {
+        const body = document.body;
+        const searchInput = document.getElementById("search");
+        const compactButton = document.getElementById("compactButton");
+        const progSelector = document.getElementById("programmeSelector");
+
+        // Dynamic State Selection Engine Trigger
+        progSelector.addEventListener("change", (e) => {
+          renderProgramme(e.target.value);
+        });
+
+        // Initialize First Render System (Default: BDS)
+        renderProgramme("BDS");
+
+        // Scenario Presentation Mutator Filters
+        document.querySelectorAll(".scenario-button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".scenario-button").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            
+            const targetView = btn.getAttribute("data-view");
+            body.classList.remove("show-s1", "show-s2");
+            if (targetView !== "all") {
+              body.classList.add(targetView);
+            }
+          });
+        });
+
+        // Real-Time Lexical Query Filter Architecture
+        searchInput.addEventListener("input", (e) => {
+          const query = e.target.value.toLowerCase().trim();
+          const rows = document.querySelectorAll("#dynamicTimelineContainer tr");
+
+          rows.forEach(row => {
+            const indexString = row.getAttribute("data-search") || "";
+            if (!query || indexString.includes(query)) {
+              row.classList.remove("search-hidden");
+            } else {
+              row.classList.add("search-hidden");
+            }
+          });
+        });
+
+        // Compact Layout Mutator Handler
+        compactButton.addEventListener("click", () => {
+          const workingState = body.classList.toggle("compact");
+          compactButton.setAttribute("aria-pressed", workingState);
+          compactButton.classList.toggle("active", workingState);
+        });
+
+        // Connect Scrolling Mechanics Between Headers and Matrix Columns
+        const fixedHeader = document.getElementById("fixedHeader");
+        const scrollBody = document.getElementById("scrollBody");
+
+        scrollBody.addEventListener("scroll", () => {
+          fixedHeader.scrollLeft = scrollBody.scrollLeft;
+        });
+      });
+    </script>
+  </body>
+</html>
