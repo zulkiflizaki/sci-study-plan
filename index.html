@@ -13240,7 +13240,7 @@
         try {
           // Fetch repository metadata from the public GitHub API
           const response = await fetch(
-            `https://api.github.com/${username}/${repo}`,
+            `https://api.github.com/repos/${username}/${repo}`
           );
 
           if (!response.ok) throw new Error("Network response was not ok");
